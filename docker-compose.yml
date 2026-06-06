@@ -9,6 +9,18 @@
 
 services:
   db:
+    image: postgres:16-alpine
+    env_file:
+      - .env.development.db
+    ports:
+      - "15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     # TODO — база данных:
     #   - указать готовый образ postgres 16-alpine
     #   - подать переменные окружения из соответствующего env-файла
@@ -25,6 +37,16 @@ services:
 
   back:
     # TODO — backend (NestJS):
+     image: ${DOCKERHUB_USERNAME}/todo-back:${IMAGE_TAG}
+     env_file:
+       - .env.development.back
+     ports:
+       - "13000:3000"
+     depends_on:
+       db:
+         condition: service_healthy
+     volumes:
+       - ./app-config:/app/config:ro
     #   - указать образ, который ты публикуешь в свой Docker Hub репозиторий
     #     (используй переменные DOCKERHUB_USERNAME и IMAGE_TAG)
     #   - подать переменные окружения из соответствующего env-файла
@@ -37,6 +59,12 @@ services:
     #     не мог изменить файл на хосте
 
   front:
+    image: ${DOCKERHUB_USERNAME}/todo-front:${IMAGE_TAG}
+    ports:
+      - "18080:80"
+    depends_on:
+      back:
+        condition:  service_started
     # TODO — frontend (nginx со статикой):
     #   - указать образ из своего Docker Hub репозитория
     #   - пробросить 80-й порт nginx наружу на 18080
@@ -45,6 +73,7 @@ services:
     #     (которая ждёт только запуска контейнера, не его health-статуса)
 
 volumes:
+  pgdata:
   # TODO — секция named volumes:
   #   - объявить том, имя которого ты указал в сервисе db (без дополнительных опций,
   #     пустого тела достаточно)
