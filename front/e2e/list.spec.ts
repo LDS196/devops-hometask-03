@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { resetTodos } from './helpers';
+import { gotoReliable, resetTodos } from './helpers';
 
 test.beforeEach(async () => {
   await resetTodos();
 });
 
 test('shows empty state when there are no todos', async ({ page }) => {
-  await page.goto('/');
+  await gotoReliable(page, '/');
   await expect(page.getByTestId('todos-empty')).toBeVisible();
   await expect(page.getByTestId('todos-empty')).toHaveText(
     /No todos yet/i,
@@ -16,7 +16,7 @@ test('shows empty state when there are no todos', async ({ page }) => {
 test('creates a todo via the inline form and clears the input', async ({
   page,
 }) => {
-  await page.goto('/');
+  await gotoReliable(page, '/');
   await page.getByTestId('create-title').fill('Buy milk');
   await page.getByTestId('create-submit').click();
 
@@ -26,14 +26,14 @@ test('creates a todo via the inline form and clears the input', async ({
 });
 
 test('rejects empty title with a client-side error', async ({ page }) => {
-  await page.goto('/');
+  await gotoReliable(page, '/');
   await page.getByTestId('create-submit').click();
   await expect(page.getByTestId('create-error')).toBeVisible();
   await expect(page.getByTestId('todos-empty')).toBeVisible();
 });
 
 test('toggles completion from the list row', async ({ page }) => {
-  await page.goto('/');
+  await gotoReliable(page, '/');
   await page.getByTestId('create-title').fill('Toggle me');
   await page.getByTestId('create-submit').click();
 
@@ -49,7 +49,7 @@ test('toggles completion from the list row', async ({ page }) => {
 });
 
 test('deletes a todo after confirming', async ({ page }) => {
-  await page.goto('/');
+  await gotoReliable(page, '/');
   await page.getByTestId('create-title').fill('Delete me');
   await page.getByTestId('create-submit').click();
 
