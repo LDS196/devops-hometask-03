@@ -1,0 +1,84 @@
+name: Deploy
+ 
+on:
+  push:
+    branches: [main]
+ 
+jobs:
+  checks:
+    uses: ./.github/workflows/typecheck.yml
+ 
+  build:
+    needs: [checks]
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [back, front]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Вход в Docker Hub
+        run: docker login -u ${{ vars.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
+
+      - name: Build образа
+        env:
+          IMAGE_SHA: ${{ vars.DOCKER_USER }}/todo-${{ matrix.project }}:sha-${{ github.sha }}
+          IMAGE_LATEST: ${{ vars.DOCKER_USER }}/todo-${{ matrix.project }}:latest
+        run: |
+          if [ "${{ matrix.project }}" = "front" ]; then
+            docker build \
+              --build-arg "VITE_API_URL=${{ vars.VITE_API_URL }}" \
+              -t "$IMAGE_SHA" -t "$IMAGE_LATEST" \
+              front
+          else
+            docker build -t "$IMAGE_SHA" -t "$IMAGE_LATEST" back
+          fi
+          echo "IMAGE_SHA=$IMAGE_SHA" >> $GITHUB_ENV
+          echo "IMAGE_LATEST=$IMAGE_LATEST" >> $GITHUB_ENV
+
+      - name: Push образа
+        run: |
+          docker push "$IMAGE_SHA"
+          docker push "$IMAGE_LATEST"
+ 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /myapp
+ 
+            sed -i "s|^APP_VERSION=.*|APP_VERSION=sha-${{ github.sha }}|" .env.development.compose
+            docker compose up -d --no-deps back front
+ 
+  notify:
+    needs: [checks, build, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify Telegram
+        run: |
+          CHECKS="${{ needs.checks.result }}"
+          BUILD="${{ needs.build.result }}"
+          DEPLOY="${{ needs.deploy.result }}"
+ 
+          if [ "$CHECKS" != "success" ]; then
+            TEXT="❌ Checks упали%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          elif [ "$BUILD" != "success" ]; then
+            TEXT="❌ Сборка упала%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          elif [ "$DEPLOY" != "success" ]; then
+            TEXT="❌ Деплой упал%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          else
+            TEXT="✅ Деплой успешен%0A${{ github.repository }} @ ${{ github.ref_name }}"
+          fi
+ 
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "text=$TEXT"

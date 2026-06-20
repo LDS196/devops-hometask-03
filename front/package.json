@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "gen:api": "openapi-typescript http://localhost:3000/swagger-json -o ./src/api/schema.d.ts --root-types",
     "e2e": "playwright test"

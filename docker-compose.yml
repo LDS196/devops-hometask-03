@@ -17,7 +17,7 @@ services:
 
   back:
     # TODO — backend (NestJS):
-    image: ${DOCKERHUB_USERNAME}/todo-back:${IMAGE_TAG}
+    image: ${DOCKERHUB_USERNAME}/todo-back:${APP_VERSION}
     env_file:
       - .env.development.back
     restart: unless-stopped
@@ -30,7 +30,7 @@ services:
       - ./app-config:/app/config:ro
 
   front:
-    image: ${DOCKERHUB_USERNAME}/todo-front:${IMAGE_TAG}
+    image: ${DOCKERHUB_USERNAME}/todo-front:${APP_VERSION}
     restart: unless-stopped
     ports:
       - "18080:80"
