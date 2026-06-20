@@ -58,8 +58,22 @@ jobs:
             sed -i "s|^APP_VERSION=.*|APP_VERSION=sha-${{ github.sha }}|" .env.development.compose
             docker compose up -d --no-deps back front
  
+
+
+  verify:
+   needs: [deploy]
+   runs-on: ubuntu-latest
+   steps:
+     - name: Smoke
+       env:
+         E2E_BASE_URL: ${{ vars.VITE_API_URL }}
+       run: |
+         # vars.VITE_API_URL у нас вида https://домен/api → отрежем /api
+         export E2E_BASE_URL="${E2E_BASE_URL%/api}"
+         bash scripts/smoke.sh
+
   notify:
-    needs: [checks, build, deploy]
+    needs: [checks, build, deploy, verify]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -75,6 +89,8 @@ jobs:
             TEXT="❌ Сборка упала%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           elif [ "$DEPLOY" != "success" ]; then
             TEXT="❌ Деплой упал%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          elif [ "$VERIFY" != "success" ]; then
+            TEXT="❌ Verify упал%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           else
             TEXT="✅ Деплой успешен%0A${{ github.repository }} @ ${{ github.ref_name }}"
           fi
