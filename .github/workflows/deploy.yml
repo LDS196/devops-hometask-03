@@ -59,16 +59,18 @@ jobs:
             docker compose --env-file .env.development.compose up -d --no-deps back front
  
   verify:
-   needs: [deploy]
-   runs-on: ubuntu-latest
-   steps:
-     - name: Smoke
-       env:
-         E2E_BASE_URL: ${{ vars.VITE_API_URL }}
-       run: |
-         # vars.VITE_API_URL у нас вида https://домен/api → отрежем /api
-         export E2E_BASE_URL="${E2E_BASE_URL%/api}"
-         bash scripts/smoke.sh
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Smoke
+        env:
+          E2E_BASE_URL: ${{ vars.VITE_API_URL }}
+        run: |
+          # vars.VITE_API_URL у нас вида https://домен/api → отрежем /api
+          export E2E_BASE_URL="${E2E_BASE_URL%/api}"
+          bash scripts/smoke.sh
 
   notify:
     needs: [checks, build, deploy, verify]
@@ -80,7 +82,8 @@ jobs:
           CHECKS="${{ needs.checks.result }}"
           BUILD="${{ needs.build.result }}"
           DEPLOY="${{ needs.deploy.result }}"
- 
+          VERIFY="${{ needs.verify.result }}"
+
           if [ "$CHECKS" != "success" ]; then
             TEXT="❌ Checks упали%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           elif [ "$BUILD" != "success" ]; then
