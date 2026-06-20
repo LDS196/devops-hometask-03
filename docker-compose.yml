@@ -18,6 +18,8 @@ services:
   back:
     # TODO — backend (NestJS):
     image: ${DOCKERHUB_USERNAME}/todo-back:${APP_VERSION}
+    environment:
+      - APP_VERSION=${APP_VERSION}
     env_file:
       - .env.development.back
     restart: unless-stopped
