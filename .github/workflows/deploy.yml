@@ -2,7 +2,7 @@ name: Deploy
  
 on:
   push:
-    branches: [main]
+    branches: [week4]
  
 jobs:
   checks:

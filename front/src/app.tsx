@@ -23,6 +23,8 @@ export function App() {
           <header className="border-b">
             <div className="container py-4">
               <h1 className="text-xl font-semibold">Todos</h1>
+              <h6>тест</h6>
+
             </div>
           </header>
           <main className="container py-6">
