@@ -22,10 +22,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - ВАШ_ДОМЕН
+        - xn--80ancbfg0apik.xn--p1ai
       secretName: app-tls           # сюда cert-manager положит сертификат Let's Encrypt
   rules:
-    - host: ВАШ_ДОМЕН
+    - host: xn--80ancbfg0apik.xn--p1ai
       http:
         paths:
           - path: /api(/|$)(.*)

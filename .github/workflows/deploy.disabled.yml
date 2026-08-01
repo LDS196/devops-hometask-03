@@ -74,28 +74,13 @@ jobs:
 
   notify:
     needs: [checks, build, deploy, verify]
-    runs-on: ubuntu-latest
     if: always()
-    steps:
-      - name: Notify Telegram
-        run: |
-          CHECKS="${{ needs.checks.result }}"
-          BUILD="${{ needs.build.result }}"
-          DEPLOY="${{ needs.deploy.result }}"
-          VERIFY="${{ needs.verify.result }}"
-
-          if [ "$CHECKS" != "success" ]; then
-            TEXT="❌ Checks упали%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          elif [ "$BUILD" != "success" ]; then
-            TEXT="❌ Сборка упала%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          elif [ "$DEPLOY" != "success" ]; then
-            TEXT="❌ Деплой упал%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          elif [ "$VERIFY" != "success" ]; then
-            TEXT="❌ Verify упал%0A${{ github.repository }} @ ${{ github.ref_name }}%0A${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          else
-            TEXT="✅ Деплой успешен%0A${{ github.repository }} @ ${{ github.ref_name }}"
-          fi
- 
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d "text=$TEXT"
+    uses: ./.github/workflows/notify.yaml
+    with:
+      checks_result: ${{ needs.checks.result }}
+      build_result: ${{ needs.build.result }}
+      deploy_result: ${{ needs.deploy.result }}
+      verify_result: ${{ needs.verify.result }}
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

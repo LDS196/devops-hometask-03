@@ -8,7 +8,7 @@ metadata:
   labels:
     app: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -21,7 +21,7 @@ spec:
         - name: dockerhub-cred
       containers:
         - name: frontend
-          image: ВАШ_ЛОГИН/todo-front:latest
+          image: lihachev/todo-front:latest
           ports:
             - containerPort: 80
           resources:
